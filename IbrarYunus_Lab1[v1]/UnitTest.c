@@ -5,7 +5,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <assert.h>
-#include "FilingTest.c"
+#include "MatrixCalc.h"
 
 
 //Function declarations
