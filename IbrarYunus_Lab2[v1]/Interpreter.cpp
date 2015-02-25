@@ -34,6 +34,7 @@ public:
 std::map<string, variableStorage> variableHash;
 vector<string> tokens {"LET", "print"};
 vector<string> operators{"+","-","*","/","="};
+vector<string> backUp;
 string line;
 string line2;
 int lineCounter = 1;
@@ -43,6 +44,9 @@ int LET = 0;
 int AM = 0;
 int DISP = 0;
 string _tempStore;
+int firstTime = 0;
+string Artith;
+
 
 /*Declarations*/
 void FileParser(string name);
@@ -50,28 +54,14 @@ int Lexer();
 int Checker(string word);
 bool isNUM(const std::string& mystring);
 void hashDebug();
-int GetResult( char * rpn ); 
-
+int expressionSolver( string exp);
 
 
 /*Maximum variables per line can be 100*/
 variableStorage myVars[100];
 
 
-/*check command line arguments only*/
-int main( int argc, char *argv[])
-{
-    
-  if(argv[1] == NULL)
-    cout<<"! Syntax is <Interpreter> <File Name> \n";
-  else
-  {
-    FileParser(argv[1]);
-  }
 
-  hashDebug();		
-  cout<<"\n";
-}
 
 /*Parses the File anf passe a line to the tokenizer*/
 void FileParser(string name) 
@@ -79,20 +69,19 @@ void FileParser(string name)
   std::ifstream fp(name);
   if(fp == NULL)
   {
-    cout<<"! File Not Found\n";
+    cout<<"! File Not Found\n";						//If file not found
     exit(0);
   }
 
-  while (getline(fp, line))
+  while (getline(fp, line))							//reads teh file line by line
   {
-  	//cout<<lineCounter<<" ";
   	cout<<line<<"\n";
-  	if(line.length() > 0)
+  	if(line.length() > 0)							//Only parses the line if it has something
   	{
   		Lexer();
   		cout<<"\n";
   	}
-  	lineCounter++;
+  	lineCounter++;									//Used later in error handling
   }
 }
 
@@ -109,19 +98,21 @@ int Lexer()
 
  	stringstream strstr(line);												//Construting a string stream
 	
-	line2 = line;
+	line2 = line;															//duplicated as it is later used in handling arithmetic
 	/* Tokenizer */	
 
  	istream_iterator<std::string> it(strstr);								// tokenize as white separated stream of strings
  	istream_iterator<std::string> end;
  	vector<std::string> results(it, end);
 
+ 	backUp = results;														//Duplicated for checking previous 'words' - for debug purposes only
  	/* Keyword Checking*/
+ 	firstTime = 0;															//Used later in Checker(), used to see if a variable is occured first time
  	for( int i = 0; i < results.size(); i++)
  	{
- 		word2 = results[i];
+ 		//word2 = results[i];
 
- 		Checker(results[i]);
+ 		Checker(results[i]);												//The interpreter logic
  	}
 
 }
@@ -130,19 +121,19 @@ int Lexer()
 /*Called by Lexer(), checks if a string is a variable, value or a keyword*/
 int Checker(string word)
 {
-	static int counter = 0;
-	int firstTime = 0;
+	static int counter = 0;														//Used to store variables
 
-	if(std::find(tokens.begin(), tokens.end(), word)!=tokens.end())						
+
+	if(std::find(tokens.begin(), tokens.end(), word)!=tokens.end())				//if teh word is a keyword		
 	{
 		cout<<word<<" "<<" is a key word\n";
-		if(word == "LET")
+		if(word == "LET")														//if it is LET then set the LET bit
 		{
 			LET = 1;
 			firstTime++;
 		}
 
-		if( word == "print")
+		if( word == "print")													//If it is print then set the DISPlay bit
 		{
 			if(firstTime != 0)
 			{
@@ -153,50 +144,89 @@ int Checker(string word)
 			{
 				cout<<"Display Mode\n";
 				DISP++;
+
 			}
 		}
+		firstTime++;															//To signify that the first word of the line has been parsed
+
 	}
 
-	else if(std::find(operators.begin(), operators.end(), word)!=operators.end())
+	else if(std::find(operators.begin(), operators.end(), word)!=operators.end())	// If the word belongs to one of the 4 opertors
 	{
 		cout<<word<<" "<<" is a operator\n";
 		if(LET == 1)
 		{
-			if(word != "=")
+			if(word != "=")															// To error handle statements as:  LET A + B
 			{
 				cout<<RED<<"\nsyntax error at line: "<< lineCounter<<"\n"<<RESET;
 	 			exit(0);
 	 		}
 		}
-		firstTime++;
+		firstTime++;															//To signify that the first word of the line has been parsed	
 	}
 
-	else if ( word == ";")
+	else if ( word == ";")														//To see if the delimiting character has been met
 	{
 		cout<<"LET = 0\n";
 		LET = 0;
 		firstTime++;
 	}
 
-	else if( !isNUM(word))
+	else if( !isNUM(word))														//If it is a variable
 	{
 		if (!(word.find("\"") != std::string::npos)) 
 		{
 			cout<<word<<" "<<" is a variable\n";
-			if( DISP > 0)
+			if( DISP > 0)														//If DISP bit is set, then display is
 			{
 				cout<<variableHash[word].values<<"\n";
 			}
-			if(LET == 1)
+			if(LET == 1)														//If let bit is set, then assign it to the incoming string
 			{
 				_tempStore = word;
+			}
+
+			if(firstTime == 0)													// in statements as C = A + B, a variables comes first
+			{
+				cout<< "Arithematic "<<"\n";
+				
+				//cout<<line2<<"\n";		
+				for( int i = 2 ; i< backUp.size()-1; i++)
+				{
+					
+
+					if(!isNUM(backUp[i]))										// To create a string to send to the expressio handler, 
+						Artith.append(variableHash[backUp[i]].values);			//If the string is not a number then append it to the master string it's value from hashmap
+
+					else
+						Artith.append(backUp[i]);								//Else append it as is			
+
+					if (std::find(operators.begin(), operators.end(), backUp[i])!=operators.end())
+					{
+						Artith.append(backUp[i]);								//If it is one of the operators then append it as is
+					}
+
+					Artith.append(" ");											// delimits teh literals with spaces
+				}		
+				cout<<Artith;
+				stringstream ss;
+				ss << expressionSolver(Artith);
+				if ( variableHash.find(word) == variableHash.end() )			// To error handle statments as 
+				{
+					cout<<RED<<"\nsyntax error at line: "<< lineCounter<<"\n"<<RESET;
+	 				exit(0);
+				}
+				variableHash[word].values = ss.str();
+
+				cout<< "Arithematic END"<<"\n";
+
 			}
 
 		}
 
 		else
 		{
-			myVars[counter].types = "str";
+			myVars[counter].types = "str";									//Unfiniches part, for string concatenation and other stuff
 			cout<<word<<" "<<" is a string\n";		
 			if(LET == 1)
 			{
@@ -206,19 +236,22 @@ int Checker(string word)
 				counter++;
 			}
 		}
-
 		firstTime++;		
 	}
-
 	else 
 	{	
-		if( isNUM(word))
+		if( isNUM(word))													//Checks id the word is infact a number ( using atoi)
 		{
+			if(firstTime == 0)												//To error handle statements as 5 = C
+			{
+				cout<<RED<<"\nsyntax error at line: "<< lineCounter<<"\n"<<RESET;
+	 			exit(0);
+			}
 			myVars[counter].types = "int";
 			cout<<word<<" "<<" is a number\n";
 		}
 
-		if(LET == 1)
+		if(LET == 1)														//Assignment for LET keyword happens here
 		{
 			
 			myVars[counter].values = word;
@@ -244,65 +277,92 @@ void hashDebug()
 {
 	cout<<"\nChecking HashMap "<<"A has "<<variableHash["A"].values<<" END";
 	cout<<"\nChecking HashMap "<<"B has "<<variableHash["B"].values<<" END";
-
 }
 
 
-/*Infix Calculator*/
-int GetResult( string mystring ) 
+
+
+//////////////Expression Parser
+///
+
+int expressionSolver( string exp)
 {
-    std::stack<int> tempHolder;
+	stringstream strstr(exp);				
+	istream_iterator<std::string> it(strstr);								// tokenize as white separated stream of strings
+ 	istream_iterator<std::string> end;
+ 	vector<std::string> results(it, end);
+ 	int ADD = 0 ;
+ 	int MIN = 0 ;
+ 	int DIV = 0 ;
+ 	int MUL = 0 ;
 
-    int tmp1, tmp2; int length = mystring.size();
+ 	int storage = 0;
 
-    for (int i = 0; i < length; i++)
-    {
-        if (isdigit(mystring[i]))
-        {
-            tempHolder.push(mystring[i] - '0');
-        }
-        else
-        {
-            switch(mystring[i])
-            {
-                case '+':
-                    tmp1 = tempHolder.top();
-                    tempHolder.pop();
-                    tmp2 = tempHolder.top();
-                    tempHolder.pop();
-                    tempHolder.push(tmp2 + tmp1);
-                    break;
+	for( int i = 0; i < results.size(); i++)
+	 	{
+	 		if(isNUM(results[i]))
+	 		{
+	 			if( ADD == 1)
+	 			{
+	 				storage += atoi(results[i].c_str());
 
+	 				ADD = 0 ; 
+	 			}
 
-                case '*':
-                    tmp1 = tempHolder.top();
-                    tempHolder.pop();
-                    tmp2 = tempHolder.top();
-                    tempHolder.pop();
-                    tempHolder.push(tmp2 * tmp1);
-                    break;
+	 			else if( MIN == 1)
+	 			{
+	 				storage -= atoi(results[i].c_str());
 
-                case '-':
-                    tmp1 = tempHolder.top();
-                    tempHolder.pop();
-                    tmp2 = tempHolder.top();
-                    tempHolder.pop();
-                    tempHolder.push(tmp2 - tmp1);
-                    break;
+	 				MIN = 0 ; 
+	 			}
+
+	 			else if( MUL == 1)
+	 			{
+	 				storage *= atoi(results[i].c_str());
+
+	 				MUL = 0 ; 
+	 			}
+
+	 			else if( DIV == 1)
+	 			{
+	 				storage /= atoi(results[i].c_str());
+
+	 				DIV = 0 ; 
+	 			}
 
 
-                case '/':
-                    tmp1 = tempHolder.top();
-                    tempHolder.pop();
-                    tmp2 = tempHolder.top();
-                    tempHolder.pop();
-                    tempHolder.push(tmp2 / tmp1);
-                    break;
-                default:
-                    break;
-            }
-        }
-    }
 
-    return tempHolder.top();
+	 			else
+	 				storage = atoi(results[i].c_str());
+	 		}
+
+	 		if(results[i] == "+")
+	 		{
+	 			ADD = 1;
+	 			//cout<<"ADD switch\n";
+	 		}
+
+	 		if(results[i] == "-")
+	 		{
+	 			MIN = 1;
+	 			//cout<<"MIN switch\n";
+	 		}
+
+
+	 		if(results[i] == "/")
+	 		{
+	 			DIV = 1;
+	 			//cout<<"DIV switch\n";
+	 		}
+
+	 		if(results[i] == "*")
+	 		{
+	 			MUL = 1;
+	 			//cout<<"MUL switch\n";
+	 		}
+
+	 		//cout<<"RES :" <<storage<<"\n";
+	 	}
+	return storage; 	
+
 }
