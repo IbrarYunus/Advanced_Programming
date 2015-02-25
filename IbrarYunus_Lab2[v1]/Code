@@ -1,0 +1,3 @@
+LET A = 67 ;
+LET B = "NG"  ;
+print B ;
