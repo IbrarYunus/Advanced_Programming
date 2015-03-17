@@ -1,0 +1,27 @@
+**************************************************
+|Ibrar Yunus
+|BSCS-2B
+|Advanced Programming
+|Assignment 1
+**************************************************
+|DOCUMENTATION
+*************
+| 
+
+github repo: 
+
+Implemented in Python, this app has 2 modes:
+1. Unit Test MODE
+	Runs 2 unite Tests
+	a. Trivial unit Test
+	b. Advanced/Verified Unit Test
+
+2. Random Mode	
+	a. Creates the problem statement, by taking a value for total number of stations on each side from the user.
+	   It then creates a dynamic array and allots each index a random number from 0 - 100.
+	   This is done three times for:
+	   	- Assembly Line 1
+	   	- Assembly Line 2
+	   	- Transition stages
+
+	b.Solves the problem by calling the 'FastestWay' algorithm. The ouput of the algorithm is returned.
