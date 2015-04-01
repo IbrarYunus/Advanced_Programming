@@ -1,0 +1,15 @@
+IbrarYunus
+BSCS-2B
+
+___
+
+A Java based File Crawler and Indexer.
+* 1st Pass: Indexes Files and saves their size, name and sbolute path in a list
+* Gives the user to searhc for files based on File Name or File Content
+
+
+github repo: https://github.com/IbrarYunus/Advanced_Programming.git
+
+Unit Testing is done via batch files!
+
+Note: Unit Tests are stricly limited to the state of the filesystem and hence any new file can cause assertions to fail.

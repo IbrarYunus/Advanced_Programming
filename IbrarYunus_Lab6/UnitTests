@@ -1,0 +1,6 @@
+echo "Unit Tests for File Crawler"
+echo "To Be Run Via Bash"
+
+javac SpiderCrawler.java
+java SpiderCrawler &
+
